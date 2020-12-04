@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6">
+          <form id="myform">
+            <div class="form-group">
+              <label for="">Name</label>
+              <input type="text" class="form-control" id="name" />
+            </div>
+            <div class="form-group">
+              <label for="">E-Mail</label>
+              <input type="text" class="form-control" id="email" />
+            </div>
+            <div class="form-group">
+              <input class="btn btn-primary" id="mainbtn" type="submit" value="Submit" />
+              <input class="btn btn-danger" type="reset" value="Reset" />
+            </div>
+          </form>
+        </div>
+        <div class="col-lg-6">
+          <table class="table table-striped">
+               <thead>
+                 <tr>
+                   <th scope="col">#</th>
+                   <th scope="col">First</th>
+                   <th scope="col">Email</th>
+                   <th scope="col">Action</th>
+                 </tr>
+               </thead>
+               <tbody id="content">
+                 
+               </tbody>
+             </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+         var isEdit = false;
+         var currentUser;
+         document.getElementById("myform").addEventListener("submit",function(e){
+          e.preventDefault()
+          // https://5cdd0a92b22718001417c19d.mockapi.io/api/users
+          
+          if(isEdit == false){
+               postDataToServer()
+          }else{
+               editDataToServer()
+          }
+         })
+
+         async function editDataToServer(){
+          var data = {
+               name : document.getElementById("name").value,
+               email : document.getElementById("email").value
+          }
+
+          var userEditData = await fetch("https://5cdd0a92b22718001417c19d.mockapi.io/api/users/" + currentUser,{
+               method : "PUT",
+               body : JSON.stringify(data),
+               headers : {
+                    "Content-type" : "application/json"
+               }
+          })
+          populateData();
+          document.getElementById("name").value = "";
+          document.getElementById("email").value = "";
+          isEdit = false;
+          currentUser = undefined;
+          document.getElementById("mainbtn").value = "Submit"
+         }
+
+
+         async function postDataToServer(){
+          var data = {
+               name : document.getElementById("name").value,
+               email : document.getElementById("email").value
+          }
+
+          var sendData = await fetch("https://5cdd0a92b22718001417c19d.mockapi.io/api/users",{
+               method : "POST",
+               body:JSON.stringify(data),
+               headers : {
+                    "Content-type" : "application/json"
+               }
+          })
+          populateData()
+          document.getElementById("name").value = "";
+          document.getElementById("email").value = "";
+         }
+
+
+         // WHenever populateData is called
+         // Fetch the data from server
+         // Clear the table
+         // Populate new Data
+         async function populateData(){
+          var userData = await fetch("https://5cdd0a92b22718001417c19d.mockapi.io/api/users");
+          var userResult = await userData.json();
+          var tbody = document.getElementById("content");
+          tbody.innerHTML = "";
+          userResult.forEach((obj) => {
+               var tr = document.createElement("tr");
+               
+               var td1 = document.createElement("td")
+               td1.innerHTML = obj.id;
+               
+               var td2 = document.createElement("td")
+               td2.innerHTML = obj.name;
+               
+               var td3 = document.createElement("td")
+               td3.innerHTML = obj.email;
+               
+               var td4 = document.createElement("td")
+               var editBtn = document.createElement("button")
+               editBtn.setAttribute("class","btn btn-info")
+               editBtn.innerHTML = "Edit";
+               editBtn.addEventListener("click",function(){
+                    fetchUser(obj.id)
+               });
+               td4.appendChild(editBtn);
+
+               var td5 = document.createElement("td")
+               var editBtn = document.createElement("button")
+               editBtn.setAttribute("class","btn btn-danger")
+               editBtn.innerHTML = "Delete";
+               editBtn.addEventListener("click",function(){
+                    deleteUser(obj.id)
+               });
+               td5.appendChild(editBtn);
+
+               tr.appendChild(td1)
+               tr.appendChild(td2)
+               tr.appendChild(td3)
+               tr.appendChild(td4)
+               tr.appendChild(td5)
+
+               tbody.appendChild(tr)
+          });
+         }
+         populateData()
+
+         async function fetchUser(id){
+               var userData = await fetch("https://5cdd0a92b22718001417c19d.mockapi.io/api/users/" + id)
+               var userResult = await userData.json();
+               document.getElementById("name").value = userResult.name;
+               document.getElementById("email").value = userResult.email;
+               document.getElementById("mainbtn").value = "Update";
+               isEdit = true;
+               currentUser = userResult.id
+         }
+
+         async function deleteUser(id){
+          var prompt = confirm("Are you sure do you want to delete?")
+          if(prompt){
+               var deleteUser = await fetch("https://5cdd0a92b22718001417c19d.mockapi.io/api/users/" + id,{
+               method : "DELETE"
+          });
+          populateData()        
+          }
+         }
+    </script>
+  </body>
+</html>
